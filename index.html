@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>مجمع نبض السيما - رأيك يهمنا</title>
+<style>
+* { box-sizing: border-box; }
+body { font-family: Tahoma, Arial, sans-serif; background: #f4f6f8; margin: 0; padding: 20px; }
+.card { max-width: 420px; margin: 30px auto; background: #fff; border-radius: 14px; padding: 25px; box-shadow: 0 2px 12px rgba(0,0,0,.08); }
+h1.clinic-title { text-align: center; color: #0f172a; font-size: 24px; margin: 0 0 10px 0; }
+h2 { text-align: center; color: #1e293b; margin-top: 0; font-size: 20px; }
+p.sub { text-align: center; color: #64748b; margin-bottom: 25px; }
+label { display: block; margin: 15px 0 6px; color: #334155; font-weight: bold; }
+input[type=text], textarea { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 15px; font-family: inherit; }
+textarea { resize: vertical; min-height: 90px; }
+.stars { display: flex; flex-direction: row-reverse; justify-content: center; gap: 8px; font-size: 40px; margin: 10px 0; }
+.stars span { cursor: pointer; color: #e2e8f0; transition: color .15s; }
+.stars span.active { color: #f59e0b; }
+button { width: 100%; margin-top: 20px; padding: 14px; background: #2563eb; color: #fff; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; }
+button:disabled { background: #94a3b8; }
+.msg { text-align: center; margin-top: 12px; font-size: 14px; }
+.error { color: #dc2626; }
+.success { color: #16a34a; }
+.hidden { display: none; }
+</style>
+</head>
+<body>
+
+<div class="card" id="formCard">
+  <h1 class="clinic-title">مجمع نبض السيما 🏥</h1>
+  <h2>رأيك يهمنا 🙏</h2>
+  <p class="sub">من فضلك قيّم زيارتك وشاركنا رأيك لتطوير خدماتنا</p>
+
+  <label>التقييم</label>
+  <div class="stars" id="stars">
+    <span data-value="1">★</span>
+    <span data-value="2">★</span>
+    <span data-value="3">★</span>
+    <span data-value="4">★</span>
+    <span data-value="5">★</span>
+  </div>
+
+  <label for="branch">القسم أو العيادة (اختياري)</label>
+  <input type="text" id="branch" placeholder="اكتب اسم القسم أو العيادة هنا...">
+
+  <label for="comment">تعليقك</label>
+  <textarea id="comment" placeholder="اكتب رأيك أو ملاحظاتك هنا..."></textarea>
+
+  <button id="submitBtn">إرسال</button>
+  <p class="msg error hidden" id="errorMsg"></p>
+</div>
+
+<div class="card hidden" id="thanksCard">
+  <div style="text-align:center; font-size:50px;">✅</div>
+  <h2 style="text-align:center; color:#16a34a;">شكرًا لرأيك!</h2>
+  <p style="text-align:center; color:#64748b;">رأيك وصلنا ويهمنا جداً لتطوير خدمات مجمع نبض السيما</p>
+</div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+
+<script>
+// بيانات مشروعك الفعالة من Firebase
+const firebaseConfig = {
+  apiKey: "AIzaSyD5K6aWyKGhEEbQe9q_wlznOFXTxj5E64g",
+  authDomain: "patient-feedback-75fff.firebaseapp.com",
+  projectId: "patient-feedback-75fff",
+  storageBucket: "patient-feedback-75fff.firebasestorage.app",
+  messagingSenderId: "465131950459",
+  appId: "1:465131950459:web:9531d65afc75803ba92dde"
+};
+
+// تهيئة Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// اختيار النجوم
+let rating = 0;
+const stars = document.querySelectorAll('#stars span');
+stars.forEach(star => {
+  star.addEventListener('click', () => {
+    rating = parseInt(star.dataset.value);
+    stars.forEach(s => s.classList.toggle('active', parseInt(s.dataset.value) <= rating));
+  });
+});
+
+// عند إرسال التقييم
+document.getElementById('submitBtn').addEventListener('click', async () => {
+  const errorMsg = document.getElementById('errorMsg');
+  errorMsg.classList.add('hidden');
+
+  if (rating === 0) {
+    errorMsg.textContent = 'من فضلك اختر تقييم بالنجوم';
+    errorMsg.classList.remove('hidden');
+    return;
+  }
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.textContent = 'جاري الإرسال...';
+
+  try {
+    await db.collection('reviews').add({
+      rating: rating,
+      complex_location: document.getElementById('branch').value.trim() || null,
+      comment: document.getElementById('comment').value.trim() || null,
+      created_at: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    document.getElementById('formCard').classList.add('hidden');
+    document.getElementById('thanksCard').classList.remove('hidden');
+  } catch (e) {
+    console.error("Firebase Error:", e);
+    errorMsg.textContent = 'حصل خطأ، حاول تاني';
+    errorMsg.classList.remove('hidden');
+    btn.disabled = false;
+    btn.textContent = 'إرسال';
+  }
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لوحة التقييمات - مجمع نبض السيما</title>
+<style>
+  body { font-family: Tahoma, Arial, sans-serif; background: #f4f6f8; margin: 0; padding: 20px; }
+  .container { max-width: 800px; margin: 0 auto; }
+  h1 { text-align: center; color: #0f172a; }
+  .card { background: #fff; border-radius: 10px; padding: 15px; margin-bottom: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+  .stars { color: #f59e0b; font-size: 18px; font-weight: bold; }
+  .clinic { color: #2563eb; font-weight: bold; margin-bottom: 5px; }
+  .comment { color: #334155; margin-top: 5px; line-height: 1.5; }
+  .date { color: #94a3b8; font-size: 12px; text-align: left; }
+  .empty { text-align: center; color: #64748b; margin-top: 40px; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>📊 تقييمات مجمع نبض السيما</h1>
+  <div id="reviewsList">جاري تحميل الآراء...</div>
+</div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyD5K6aWyKGhEEbQe9q_wlznOFXTxj5E64g",
+  authDomain: "patient-feedback-75fff.firebaseapp.com",
+  projectId: "patient-feedback-75fff",
+  storageBucket: "patient-feedback-75fff.firebasestorage.app",
+  messagingSenderId: "465131950459",
+  appId: "1:465131950459:web:9531d65afc75803ba92dde"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// استدعاء التقييمات من مجموعة reviews
+db.collection('reviews').orderBy('created_at', 'desc').onSnapshot((snapshot) => {
+  const container = document.getElementById('reviewsList');
+  container.innerHTML = '';
+
+  if (snapshot.empty) {
+    container.innerHTML = '<p class="empty">لا توجد تقييمات حالياً.</p>';
+    return;
+  }
+
+  snapshot.forEach((doc) => {
+    const data = doc.data();
+    const starsText = '★'.repeat(data.rating || 0) + '☆'.repeat(5 - (data.rating || 0));
+    const dateText = data.created_at ? new Date(data.created_at.toDate()).toLocaleString('ar-EG') : '';
+
+    const item = document.createElement('div');
+    item.className = 'card';
+    item.innerHTML = `
+      <div class="stars">${starsText} (${data.rating || 0}/5)</div>
+      <div class="clinic">القسم/العيادة: ${data.complex_location || 'غير محدد'}</div>
+      <div class="comment">التعليق: ${data.comment || 'بدون تعليق'}</div>
+      <div class="date">${dateText}</div>
+    `;
+    container.appendChild(item);
+  });
+}, (error) => {
+  console.error("Firestore Error:", error);
+  document.getElementById('reviewsList').innerHTML = '<p class="empty" style="color:red;">حدث خطأ في جلب التقييمات. تأكد من صلاحيات Firebase Rules للقراءة (read).</p>';
+});
+</script>
+
+</body>
+</html>
